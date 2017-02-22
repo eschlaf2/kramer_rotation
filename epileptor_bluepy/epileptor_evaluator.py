@@ -1,7 +1,5 @@
 """Main Graupner-Brunel STDP example script"""
 
-import numpy
-
 import bluepyopt as bpop
 import epileptor_util
 import logging
@@ -9,6 +7,9 @@ import logging
 logging.basicConfig(level=logging.WARN)
 
 LOGGING_DEBUG = False
+
+plot = True  # Plot target traces
+
 
 def logging_debug_vec(fmt, vec):
     '''log to debug a vector'''
@@ -29,29 +30,32 @@ def get_epileptor_params(params):
     :rtype : dict
     """
     ep_param = {
-    'y0': 1.,
-    'tau0': 2857.,
-    'tau1': 1.0,
-    'tau2': 10.,
-    'Irest1': 3.1,
-    'Irest2': 0.45,
-    'gamma': 1e-2,
-    'x1_init': 0.,
-    'y1_init': -5.,
-    'z_init': 3.,
-    'x2_init': 0.,
-    'y2_init': 0.,
-    'g_init': 0.,
-    'noise_ensemble1': 25e-3,
-    'noise_ensemble2': 25e-2} # Fixed params; x0 will be optimized
-                   
-                  
+        'y0': 1.,
+        'tau0': 2857.,
+        'tau1': 1.0,
+        'tau2': 10.,
+        'Irest1': 3.1,
+        'Irest2': 0.45,
+        'gamma': 1e-2,
+        'x1_init': 0.,
+        'y1_init': -5.,
+        'z_init': 3.,
+        'x2_init': 0.,
+        'y2_init': 0.,
+        'g_init': 0.,
+        'observation_sigmas': 0.,
+        'noise_ensemble1': 0.,
+        'noise_ensemble2': 0.}  # Fixed params;
+    # x0 will be optimized; set all noise to 0
+
     for param_name, param_value in params:
-       ep_param[param_name] = param_value
+        ep_param[param_name] = param_value
 
     return ep_param
 
-class Epileptor_Evaluator(bpop.evaluators.Evaluator):
+
+# class Epileptor_Evaluator(bpop.evaluators.Evaluator):
+class Epileptor_Evaluator(object):
 
     """Epileptor Evaluator"""
 
@@ -70,7 +74,8 @@ class Epileptor_Evaluator(bpop.evaluators.Evaluator):
 
         self.param_names = [param.name for param in self.params]
 
-        self.protocols, self.target = epileptor_util.load_protocols() # protocols and targets for each protocol
+        self.protocols, self.target = epileptor_util.load_protocols(plot=plot)
+        # protocols and targets for each protocol
 
         self.objectives = [bpop.objectives.Objective(protocol.prot_id)
                            for protocol in self.protocols]
@@ -93,7 +98,7 @@ class Epileptor_Evaluator(bpop.evaluators.Evaluator):
         param_dict = self.get_param_dict(param_values)
 
         outcome = [epileptor_util.protocol_outcome(protocol, param_dict)
-                    for protocol in self.protocols]
+                   for protocol in self.protocols]
 
         return outcome
 
@@ -106,11 +111,11 @@ class Epileptor_Evaluator(bpop.evaluators.Evaluator):
         param_dict = self.get_param_dict(param_values)
 
         err = []
-        logging_debug_vec('evaluate_with_lists -> target:',self.target)
+        logging_debug_vec('evaluate_with_lists -> target:', self.target)
         for protocol, target in \
                 zip(self.protocols, self.target):
             result = epileptor_util.protocol_outcome(protocol, param_dict)
-            logging_debug_vec('result:%f',result)
-            err.append(epileptor_util.rmse(target,result))
+            logging_debug_vec('result:%f', result)
+            err.append(epileptor_util.rmse(target, result))
 
         return err

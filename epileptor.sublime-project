@@ -19,6 +19,7 @@
 	],
 	"settings":
 	{
-		"python_interpreter": "/Users/emilyschlafly/anaconda/envs/py27/bin/python"
+		"python_interpreter": "/Users/emilyschlafly/anaconda/envs/py27/bin/python",
+		"auto_formatting": false
 	}
 }

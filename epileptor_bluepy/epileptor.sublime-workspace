@@ -4,8 +4,40 @@
 		"selected_items":
 		[
 			[
+				"obs",
+				"observation_sigmas"
+			],
+			[
+				"obser",
+				"observation_sigmas\tstatement"
+			],
+			[
+				"obse",
+				"observation_noise\tstatement"
+			],
+			[
+				"T",
+				"True\tinstance"
+			],
+			[
 				"logg",
-				"logging_debug"
+				"logging_debug\tfunction"
+			],
+			[
+				"noisy",
+				"noisy_data\tstatement"
+			],
+			[
+				"Observation",
+				"observation_sigmas\tstatement"
+			],
+			[
+				"dims",
+				"dims_observations"
+			],
+			[
+				"epile",
+				"epileptor_model\tclass"
 			],
 			[
 				"observa",
@@ -36,7 +68,7 @@
 			"file": "epileptor_util.py",
 			"settings":
 			{
-				"buffer_size": 9370,
+				"buffer_size": 10093,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -45,7 +77,17 @@
 			"file": "epileptor_evaluator.py",
 			"settings":
 			{
-				"buffer_size": 3289,
+				"buffer_size": 3341,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/stdputil.py",
+			"settings":
+			{
+				"buffer_size": 13161,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		}
@@ -115,7 +157,8 @@
 	},
 	"expanded_folders":
 	[
-		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy"
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy",
+		"/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp"
 	],
 	"file_history":
 	[
@@ -124,7 +167,7 @@
 	],
 	"find":
 	{
-		"height": 23.0
+		"height": 35.0
 	},
 	"find_in_files":
 	{
@@ -157,7 +200,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -186,7 +229,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -195,28 +238,39 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9370,
+						"buffer_size": 10093,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								9989,
+								9989
 							]
 						],
 						"settings":
 						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
 							"syntax": "Packages/Python/Python.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 3342.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -225,15 +279,56 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3289,
+						"buffer_size": 3341,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								956,
+								956
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 495.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/stdputil.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 13161,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6417,
+								6421
 							]
 						],
 						"settings":
@@ -243,10 +338,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2981.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"type": "text"
 				}
 			]
