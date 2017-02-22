@@ -1,0 +1,24 @@
+{
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"/Users/emilyschlafly/anaconda/envs/py27/bin/python\" -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy"
+		},
+		{
+			"path": "/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp"
+		}
+	],
+	"settings":
+	{
+		"python_interpreter": "/Users/emilyschlafly/anaconda/envs/py27/bin/python"
+	}
+}
