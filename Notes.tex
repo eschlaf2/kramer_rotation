@@ -1,0 +1,234 @@
+\documentclass[11pt]{article}
+\usepackage[textheight=9in]{geometry}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{listings}
+\usepackage[T1]{fontenc} % for upquote -> for straight quotes
+\usepackage{upquote} % for straight quotes
+\usepackage{float}
+\usepackage{placeins} %for FloatBarrier
+\usepackage{csvsimple}
+\usepackage{wrapfig}
+\usepackage{longtable}
+\usepackage[urlcolor=blue,colorlinks=true]{hyperref}
+\usepackage{csquotes}
+\usepackage{siunitx}
+\usepackage{biblatex}
+\addbibresource{/Users/emilyschlafly/BU/citations/citation_library.bib}
+\lstset{language=Python}
+
+\begin{document}
+{\hypersetup{linkcolor=black}
+\tableofcontents}
+
+\section{2/1/17}
+	\subsection{Epileptor paper | Jirsa, 2014}
+	Describes the epileptor model for seizure activity \cite{Jirsa:2014aa}. The model is derived by considering invariant properties of seizures: spike frequence and amplitude trends during siezure onset and offset. They consider SLEs to be within the standard repertoir of brain states explaining why they are associated with such a wide range of afflictions. They consider that the brain then passes a bifurcation point when starting or ending an SLE. Interictal states are modeled by oscillatory states (limit cycles) and non-SLE states are in the space of a stable equilibrium point. SWEs in the preictal interval can be seen as a result of the state approaching a bifurcation point.
+
+	The model is governed by 3 ensembles comprising 5 total equations. The first ensemble is composed of two equations and deals with fast discharges (fast time scale). The second ensemble is again two equations, but now at a longer time scale and representes SWEs. The third ensemble is a single variable, called the permittivity variable, z. This variable determines how near the current state is to a seizure onset. The permitivity variable operates on a very long time scale. 
+
+	The Virtual Brain Project has a GUI and a bunch of code for playing with this model - they add in some additional parameters.
+
+	In the paper, the model equations will produce a plot that looks more like the one in the paper if the $g$ coefficient is set to 2 (instead of 0.002). Additionally, I think the traces shown are $-x_1 + x_2$ (rather than $x_1 + x_2$).
+
+	\subsection{Reproducing the Model}
+	Since the equations, parameter values, and initial conditions for the model were all given in the paper, it is easy enough to reproduce their plots (with the minor alteration in the $g$ coefficient mentioned above). Compare the plots in Figure \ref{fig:papercheck}.
+
+	\begin{figure}[htbp!][hb]
+		\centering
+		\includegraphics[width=\linewidth]{figs/epileptor-fig5a.png}
+		\includegraphics[width=\linewidth]{figs/epileptor-homemade.png}
+		\caption{Comparison of model outputs. The top figure is Figure 5a from Jirsa; the bottom figure was generated using the \textit{sdeint} package for integrating stochastic differential equations in Python. The trace shows the sum $-x_1 + x_2$.}
+		\label{fig:papercheck}
+	\end{figure}
+
+	Note that there are a few differences: 1) the cycle seems a bit faster for mine and the initial conditions may differ - in particular, I cut off the first 500 seconds in mine to align the traces. 2) The $x_2$ spike frequency seems a bit higher in mine and more regular (see Fig.\ref{fig:sepx1x2}).
+
+	\begin{figure}[htbp!][htbp!]
+		\centering
+		\includegraphics[width=\linewidth]{figs/epileptor-x1-x2.png}
+		\caption{Variables $x_1$ and $x_2$ separated.}
+		\label{fig:sepx1x2}
+	\end{figure}
+
+	\subsection{Next steps}
+	\begin{itemize}
+		\item Set up Kalman filter
+		\item Look over BluePyOpt paper \cite{Van-Geit:2016aa}
+		\item Would like to read about stochastic calculus (Ito vs. Stratonovich) and review different integration methods. It looks like in the VBP they switch to integrating using the Heun method (implicit) - supposed to allow larger step sizes. Check \cite{Kloeden:1995aa} for both of these. 
+	\end{itemize}
+
+\section{2/11/17}
+		\subsection{Checking the Kalman filter} % (fold)
+			\label{sub:check_kalman_filter}
+
+			\begin{figure}[htbp!]
+			\includegraphics[width=\linewidth]{figs/vossFNsim.png}
+			\includegraphics[width=\linewidth]{figs/vossFNkalman.png}
+			\caption{Testing Kalman filter. \textit{(Top)} True trajectory based on Fitzhugh-Nagumo model (black) and noisy observations. \textit{(Bottom)} Kalman filter tracking of variables (red) and parameters (magenta). Confidence intervals are shown for the parameters. Process noise for the parameters was set to $[0.015, 0.0015]$ for $Iext$ and $a$, respectively. Initial conditions for the Kalman filter use true values of variables and parameters. }
+			\label{fig:kalmantestFN}
+			\end{figure}
+
+			\begin{figure}[htbp!]
+			\includegraphics[width=\linewidth]{figs/kalman-sosostart.png}
+			\includegraphics[width=\linewidth]{figs/kalman-badstart.png}
+			\caption{Kalman filter with bad initial estimates. \textit{(Top)} Initial estimates of hidden variable and parameters are within 1.5 of actual values. \textit{(Bottom)} Initial estimates here are within 10 of actual values. In both cases, the initial value of the observable was set to the simulated noisy initial point and actual values of the parameters are shown in black.}
+			\label{fig:kalman_badstarts}
+			\end{figure}
+
+			Parameter estimation gets worse with more parameters. With only one parameter, the Kalman filter tracks the hidden state and parameters well (Fig.\ref{fig:kalman_1param}). Extending the trial to longer times and increasing noise does not seem to improve estimation (not shown). Additionally, the two estimated parameters will track similar shapes if the noise is set the same - splitting the difference in the estimated functions.
+
+			\begin{figure}[htbp!]
+			\includegraphics[width=\linewidth]{figs/kalman-1param.png}
+			\caption{Kalman tracking of a single parameter. This is the figure that is shown in Voss \cite{Voss:2004aa} and Schiff \cite{Schiff:2012aa}, chapter 5. The filter quickly generates a pretty tight fit around the $Iext$ parameter trace.}
+			\label{fig:kalman_1param}
+			\end{figure}
+
+			% subsection check_kalman_filter (end)
+
+		\subsection{Testing the Kalman filter on an Epileptor simulation} % (fold)
+			\label{sub:testing_the_kalman_filter_on_an_epileptor_simulation}
+			\begin{figure}[htbp!]
+			\includegraphics[width=\linewidth]{figs/epileptor-noisysim.png}
+			\includegraphics[width=\linewidth]{figs/epileptor-kalmanperfectstart.png}
+			\caption{Tracking hidden states of the Epileptor. Just showing that the filter can track the hidden states (no parameters here) given a perfect start (initial estimate matches initial conditions). Did not verify that the red dashed lines correspond to the correct traces...}
+			\label{fig:epileptor_kalman_noparams}
+			\end{figure}
+
+			{\color{red}... I should turn the filter into a separate Python function so I can just run all of these things in the Notebook and have everything there are ready to go rather than using Tex...}
+
+			The top plot in Fig.\ref{fig:epileptor_kalman_noparams} shows the output of $-x1 + x2$ from a non-noisy Epileptor simulation in black. The blue show noisy observations based on the black trace where the level of noise $0.04*\sigma_{sim}^2$ (same as in Schiff/Voss). Using the noisy data and setting all initial estimates to the actual initial values yields the lower plot in Fig.\ref{fig:epileptor_kalman_noparams}. {\color{red} It might be worth looking at how initial conditions and noise affect these traces at some point.}
+
+			\begin{figure}[htbp!]
+			\includegraphics[width=\linewidth]{figs/epileptor-kalman-1param-vars.png}
+			\includegraphics[width=\linewidth]{figs/epileptor-kalman-1param-params.png}
+			\caption{Filtering the Epileptor with one static parameter. Here the hidden state estimates and parameter estimates are separated with the bottom plot showing the parameter estimates.}
+			\label{fig:kalman_epileptor_oneparam}
+			\end{figure}
+
+			Figure \ref{fig:kalman_epileptor_oneparam} shows the filter tracking a single parameter, $x_0$. The parameter is set to the same constant as in the simulation shown in Fig.\ref{fig:epileptor_kalman_noparams}. The initial estimates of the state variables and parameters are within 3 units of the actual values except for $x_1$ and $x_2$, which are set such that $-x_1 + x_2 = Y_0$, where $Y_0$ is the first observation in the simulated data set. The filter estimate did not stabilize around the true value until more than \num{1000} time steps had passed. 
+
+
+			% subsection testing_the_kalman_filter_on_an_epileptor_simulation (end)
+
+\section{2/19/17} % (fold)
+	\label{sec:2_19_17}
+	\begin{itemize}
+		\item BluePyOpt installation and examples
+		\item DEAP optimization
+	\end{itemize}
+
+	\subsection{BluePyOpt} % (fold)
+		\label{sub:bluepyopt}
+
+		\subsection{Installation} % (fold)
+			\label{sub:installation}
+			
+			I cloned the BluePyOpt repository and got their examples running. I had to install NEURON to get the ephys module to work properly and ended up needing to use conda install to make the python support work. Also, NEURON changed some lines in .bash\_profile (reset PYTHONPATH without including the previous value), so those had to be updated after the install. The simplecell and l5pc examples will run with Python 3, but the Graupner-Brunel STDP example won't - Python 2.7 worked.
+			% subsection installation (end)
+
+		\subsection{Testing} % (fold)
+			\label{sub:testing}
+			In the BluePyOpt paper, Van Geit et al describe setting up the optimization for a model that does not require the \verb|ephys| package \cite{Van-Geit:2016aa}. Only the model and an evaluator need to be written in order to run this type of optimization. An evaluator is a class object that maps parameters to objectives. The basic layout for setting up the model evaluator is as follows:
+
+			\begin{enumerate}
+				\item Construct a dictionary of parameters. In the STDP example, this is done by defining a method that takes \textit{params} (parameters to be optimized) as input and returning a dictionary of all parameters. The parameters to be optimized are initialized in the evaluator class constructor with the range of possible values. For initial testing, only the $x0$ parameter is set to be optimized while the rest are frozen. The full list of frozen parameters is shown in Listing \ref{lst:default_evaluator_params}. Notice that all noise values are set to zero for the evaluator. When generating the simulation, these will be nonzero, and it may make sense to change the ensemble noise values, but for simplicity they start at zero. 
+				\item Set up the protocols to be optimized. In the STDP example, this is a series of signalling locations corresponding to different mean and standard error values according to the literature; here, the mean and standard errors are the objectives. In Epileptor, the simulation (or real data) will be the objective. For initial testing, the protocols shown in Listing \ref{lst:first_protocols} were used. These protocols set the parameters for the simulation that will be used as the target trace. The resulting targets are shown in Figure \ref{fig:first_protocols}. Protocol 1 includes both process and observation noise, Protocol 2 only includes process noise, and Protocol 3 is fully deterministic. The black line is the underlying process and the blue points represent the possibly noisy observations that are the actual targets of the optimization.
+				\item Evaluate the optimization results against the protocol objectives. Finally, the evaluator quantifies the error in the results in order to minimize this error. For the Epileptor, this is done by computing the root mean square error between the two traces {(\color{red} Is there a better way to do this?)}.
+			\end{enumerate}
+
+			The Epileptor model itself and all supporting functions are constructed separately and stored in a different file. Because this code was reused from the Kalman filter, there are functions which are not used and some of the information is redundant. Also, I don't really know what I'm doing as far as object oriented programming so it's sloppy. {\color{red} (Someday I can clean this up and optimize it if it seems worthwhile to do so.)}
+
+			\begin{figure}[htbp]
+				\centering
+				\includegraphics[width=0.95\textwidth]{figs/021917/protocol0.png}
+				\includegraphics[width=0.95\textwidth]{figs/021917/protocol1.png}
+				\includegraphics[width=0.95\textwidth]{figs/021917/protocol2.png}
+				\caption{Initial testing of optimization of Epileptor model using BluePyOpt machinery. These figures show the `target' traces for the protocols shown in \ref{lst:first_protocols}. The black line is the underlying process and the blue points represent the possibly noisy observations that are the actual targets of the optimization.}
+				\label{fig:first_protocols}
+			\end{figure}
+
+			\lstinputlisting[caption={Default Epileptor parameters.}, label={lst:default_evaluator_params}]{figs/021917/default_evaluator_params.py}
+
+			\lstinputlisting[language=Python, caption={Protocols for testing BluePyOpt optimization of Epileptor.}, label={lst:first_protocols}]{figs/021917/protocols.py}
+
+			*** TODO: Describe results, get some EEG data and see if running it breaks everything... ***
+
+			% subsection testing (end)
+
+		
+		% subsection bluepyopt (end)
+
+	\subsection{DEAP optimization} % (fold)
+		\label{sub:deap_optimization}
+		
+		% subsection deap_optimization (end)
+
+	% section 2_19_17 (end)
+
+\section{03/04/17} % (fold)
+	\label{sec:03_04_17}
+
+	Have been messing around with the BluePyOpt package using model simulations as input and downloaded some EEG data from ieeg.org - the code did not break and looks like it might be a good starting point to figure out which parameters should be optimized.
+
+	\subsection{Looking at ieeg.org data} % (fold)
+		\label{sub:looking_at_ieeg_org_data}
+		First, to download the data, I set up the command line interface (CLI) package and made an alias for the \textit{ieeg} command so that it runs from anywhere. Data is set to download into \textit{\~/Kramer\_rotation/ieeg\_data}. A dataset can be downloaded using the command
+		\begin{lstlisting} 
+ieeg download -c ch_06 I002_A0003_D010
+	 	\end{lstlisting}
+	 	where \textit{I002\_A0003\_D010} can be substituted for the name of whatever dataset. Using the \verb|-c| option lets you pick a channel. More instructions can be found at \break \href{https://bitbucket.org/ieeg/ieeg/wiki/cli}{https://bitbucket.org/ieeg/ieeg/wiki/cli}.
+
+	 	Once the data is downloaded, it has to be converted into an EDF file:
+	 	\begin{lstlisting}
+mef2edf ch_06.mef --output-file outputEdf.edf
+		\end{lstlisting}
+		The result is saved in a subfolder in the directory where the data is saved (\textit{mef2edf} is also aliased to work from any directory). The package \textit{pyedflib} will read these files and can be installed using \textit{pip install pyedflib} for python 2.7 and beyond. Usage can be found in the package documentation online and is relatively straightforward:
+		\begin{lstlisting}
+f = EdfReader(
+    '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/' +
+    'I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf')
+chan = 0
+data = f.readSignal(chan)
+sample_freq = f.getSampleFrequency(chan) 
+f._close()
+		\end{lstlisting}
+		DON'T FORGET TO CLOSE THE FILE. The portion of code shown above is from \verb|epileptor_util -> load_protocols|. 
+
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[width=0.95\textwidth]{figs/030417/data.png}
+			\caption{EEG data from ieeg.org, dataset I002\_A0003\_D010 ch\_06.}
+			\label{fig:first_data}
+		\end{figure}
+
+		This dataset is shown in \ref{fig:first_data}. The set was chosen arbitrarily and I don't know whether or not this is representative or particularly interesting, but it looks like it has three SLEs, although the baseline shift is not obvious (note that in subsequent plots using this dataset the y-axis is scaled down by a factor of 1000). I did a first pass optimization using bpop with only 3 offspring and max 10 generations. The unfrozen parameters were $\tau{0}$, which alters the rate of change of the permittivity variable, and the initial conditions for the $y_{1}$ and $z$ variables. The results from the trial run are shown in Figure \ref{fig:bpop_first_data}.
+
+		\begin{figure}[htbp]
+			\centering
+			\includegraphics[height=0.3\textheight]{figs/030417/bpop_data1.png}
+			\includegraphics[height=0.3\textheight]{figs/030417/bpop_data2.png}
+			\includegraphics[height=0.3\textheight]{figs/030417/bpop_data3.png}
+			\caption{Test run of BluePyOpt. Only the parameters $\tau_{0}$, $y_{1}(0)$, and $z(0)$ were unfrozen.}
+			\label{fig:bpop_first_data}
+		\end{figure}
+
+		Just looking at these plots, which are the product of very few generations, it looks like it might be worth looking at the parameters that determine the extent of the baseline shift. The other major difference between the observed data and the simulation is the fact that the SLEs occur at regular intervals in the simulations. Maybe consider windowing the data. Also, with the Kalman filter, we can watch $\tau_{0}$ vary.
+
+		\subsection{Next steps} % (fold)
+			\label{sub:030417_next_steps}
+			\begin{itemize}
+				\item What parameters should be optimized
+				\item What data should we be looking at
+				\item Put real data into the Kalman filter with $\tau_0$ as a parameter 
+			\end{itemize}
+			% subsection next_steps (end)
+		 % subsection looking_at_ieeg_org_data (end) 
+
+	% section 03_04_17 (end)
+
+
+\clearpage
+\printbibliography
+
+\end{document}
