@@ -3,24 +3,30 @@
 import bluepyopt as bpop
 import epileptor_util
 import logging
+import matplotlib.pyplot as plt
+import numpy as np
 
 logging.basicConfig(level=logging.WARN)
 
 LOGGING_DEBUG = False
 
-plot = True  # Plot target traces
+plot = False  # Plot target traces
 
 
 def logging_debug_vec(fmt, vec):
     '''log to debug a vector'''
     if LOGGING_DEBUG:
-        logging.debug(fmt, ', '.join(map(str, vec)))
+        # logging.debug(fmt, ', '.join(map(str, vec)))
+        print(fmt, ', '.join(map(str, vec)))
 
 
 def logging_debug(*args):
     '''wrapper to log to debug a vector'''
     if LOGGING_DEBUG:
-        logging.debug(*args)
+        # logging.debug(*args)
+        print(args)
+        # for arg in args:
+        #     print(arg)
 
 
 def get_epileptor_params(params):
@@ -30,16 +36,17 @@ def get_epileptor_params(params):
     :rtype : dict
     """
     ep_param = {
+        'x0': -1.6,
         'y0': 1.,
-        'tau0': 2857.,
+        # 'tau0': 2857.,
         'tau1': 1.0,
         'tau2': 10.,
         'Irest1': 3.1,
         'Irest2': 0.45,
         'gamma': 1e-2,
         'x1_init': 0.,
-        'y1_init': -5.,
-        'z_init': 3.,
+        # 'y1_init': -5.,
+        # 'z_init': 3.,
         'x2_init': 0.,
         'y2_init': 0.,
         'g_init': 0.,
@@ -59,13 +66,15 @@ class Epileptor_Evaluator(object):
 
     """Epileptor Evaluator"""
 
-    def __init__(self):
+    def __init__(self, plot=plot, total_time=2500, dt_sample=.1):
         """Constructor"""
 
         super(Epileptor_Evaluator, self).__init__()
         # Graupner-Brunel model parameters and boundaries,
         # from (Graupner and Brunel, 2012)
-        self.ep_params = [('x0', -2., 0.)]
+        self.ep_params = [('y1_init', -20., 5.),
+                          ('z_init', 2., 6.),
+                          ('tau0', 1000., 5000.)]
 
         self.params = [bpop.parameters.Parameter
                        (param_name, bounds=(min_bound, max_bound))
@@ -74,11 +83,15 @@ class Epileptor_Evaluator(object):
 
         self.param_names = [param.name for param in self.params]
 
-        self.protocols, self.target = epileptor_util.load_protocols(plot=plot)
+        self.protocols, self.target = epileptor_util.\
+            load_protocols(plot=plot, total_time=total_time,
+                           dt_sample=dt_sample)
         # protocols and targets for each protocol
 
         self.objectives = [bpop.objectives.Objective(protocol.prot_id)
                            for protocol in self.protocols]
+
+        self.plot = plot
 
     def get_param_dict(self, param_values):
         """Build dictionary of parameters for the Epileptor model from an
@@ -97,7 +110,8 @@ class Epileptor_Evaluator(object):
         """
         param_dict = self.get_param_dict(param_values)
 
-        outcome = [epileptor_util.protocol_outcome(protocol, param_dict)
+        outcome = [epileptor_util.
+                   protocol_outcome(protocol, param_dict, plot=self.plot)
                    for protocol in self.protocols]
 
         return outcome
@@ -114,8 +128,22 @@ class Epileptor_Evaluator(object):
         logging_debug_vec('evaluate_with_lists -> target:', self.target)
         for protocol, target in \
                 zip(self.protocols, self.target):
-            result = epileptor_util.protocol_outcome(protocol, param_dict)
-            logging_debug_vec('result:%f', result)
+            result = epileptor_util.protocol_outcome(protocol, param_dict,
+                                                     plot=False)
+            logging_debug_vec('evaluate_with_lists -> result:', result)
+            logging_debug('evaluate_with_lists -> result type:', type(result))
+            logging_debug_vec('evaluate_with_lists -> target:', target)
+            logging_debug('evaluate_with_lists -> target type:', type(target))
             err.append(epileptor_util.rmse(target, result))
+            if self.plot:
+                fig, ax1 = plt.subplots(figsize=(10, 2))
+                ax1.plot(target[0], 'r')
+                # ax1.set_ylabel('target', color='r')
+                # ax2 = ax1.twinx()
+                ax1.plot(result[0], 'b')
+                # ax2.set_ylabel('result', color='b')
+                plt.axis('tight')
+                plt.title('RMSE: {}'.format(err[-1]))
+                plt.show()
 
         return err

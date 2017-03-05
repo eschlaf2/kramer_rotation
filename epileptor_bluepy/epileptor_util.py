@@ -17,6 +17,7 @@ import numpy as np
 import integrators
 import matplotlib.pyplot as plt
 from integrators import ruku4
+from pyedflib import EdfReader
 
 logging.basicConfig(level=logging.WARN)
 
@@ -26,7 +27,7 @@ logging.basicConfig(level=logging.WARN)
 # verbose output is needed
 LOGGING_DEBUG = True
 
-plot = False
+plot = True
 
 
 def logging_debug_vec(fmt, vec):
@@ -66,9 +67,10 @@ class Protocol(object):
 
     """Protocol"""
 
-    def __init__(self, params=param_epileptor, prot_id=None, **kwargs):
+    def __init__(self, params=param_epileptor, total_time=2500, prot_id=None, **kwargs):
         self.prot_id = prot_id
         self.params = dict(params)
+        self.total_time = total_time
         for key, value in kwargs.iteritems():
             self.params[key] = float(value)
 
@@ -136,6 +138,9 @@ class Model(object):
                  mfc='blue', ms=3, label='noisy data')
         plt.plot(self.observation_function(self.augmented_state).T,
                  'k', linewidth=2, label='actual')
+        # plt.figure()
+        # for i in range(self.dims_state_vars):
+        # plt.plot(self.augmented_state[self.dims_params + 2, :], label=self.var_names[2])
         plt.xlabel('t')
         plt.legend()
         plt.axis('tight')
@@ -151,8 +156,11 @@ def set_steps_per_sample(dt_sample, dt_integrate):
 
 
 class epileptor_model(Model):
-    def __init__(self, params=param_epileptor):
+    def __init__(self, params=param_epileptor, total_time=2500, dt_sample=0.1,
+                 **kwargs):
         '''x0 is tracked parameter'''
+        for key, value in kwargs.iteritems():
+            params[key] = float(value)
         self.x0, self.y0 = params['x0'], params['y0']
         self.tau0, self.tau1, self.tau2 = \
             params['tau0'], params['tau1'], params['tau2']
@@ -174,13 +182,13 @@ class epileptor_model(Model):
         self.var_names = ['x1', 'y1', 'z', 'x2', 'y2', 'g']
         self.parameter_names = ['x0']
 
-        self.dims_params = len(self.var_names)
-        self.dims_state_vars = len(self.parameter_names)
+        self.dims_params = len(self.parameter_names)
+        self.dims_state_vars = len(self.var_names)
         self.dims_observations = 1
         self.dims_augmented_state = self.dims_params + self.dims_state_vars
 
-        self._total_time = 10  # 2500 for epileptor, 160 for FN
-        self._dt_sample = 0.1
+        self._total_time = total_time  # 2500 for epileptor, 160 for FN
+        self._dt_sample = dt_sample
         self._dt_integrate = self._dt_sample
         self._num_samples = int(set_num_samples(
             self._total_time, self._dt_sample))
@@ -243,7 +251,7 @@ class epileptor_model(Model):
         x0 = parameters.reshape(x1.shape)
         x1_dot = y1 - self.f1(x1, x2, z) - z + self.Irest1
         y1_dot = self.y0 - 5. * x1 * x1 - y1
-        z_dot = 1 / self.tau0 * (4 * (x1 - x0) - z)
+        z_dot = 1. / self.tau0 * (4. * (x1 - x0) - z)
         x2_dot = -y2 + x2 - x2**3 + self.Irest2 + 2. * g - 0.3 * (z - 3.5)
         y2_dot = 1 / self.tau2 * (-y2 + self.f2(x2))
         g_dot = -self.gamma * (g - 0.1 * x1)
@@ -276,23 +284,52 @@ class epileptor_model(Model):
             (x1 * (x2 - 0.6 * (z - 4)**2)) * (x1 >= 0)
 
     def f2(self, x2):
-        return 0 * (x2 < -0.25) + (6 * (x2 + 0.25)) * (x2 >= -0.25)
+        return 0. * (x2 < -0.25) + (6 * (x2 + 0.25)) * (x2 >= -0.25)
 
 
-def load_protocols(plot=plot):
+def load_protocols(plot=plot, total_time=[], dt_sample=0.1):
     """Load simulation using params from Jirsa, 2014."""
+
+    if not total_time:
+        total_time = 2500
     protocols = [Protocol(prot_id='default'),
-                 Protocol(prot_id='clean', observation_sigmas=0.),
+                 Protocol(prot_id='clean', observation_sigmas=0., tau0=1000),
                  Protocol(prot_id='noiseless',
                           observation_sigmas=0.,
                           noise_ensemble1=0.,
-                          noise_ensemble2=0.)]
-    target = [epileptor_model(params=protocols[0].params).
+                          noise_ensemble2=0.,
+                          tau0=2000)]
+    target = [epileptor_model(params=protocols[0].params,
+                              total_time=total_time, dt_sample=dt_sample).
               generate_simulation(plot=plot),
-              epileptor_model(params=protocols[1].params).
+              epileptor_model(params=protocols[1].params,
+                              total_time=total_time, dt_sample=dt_sample).
               generate_simulation(plot=plot),
-              epileptor_model(params=protocols[2].params).
+              epileptor_model(params=protocols[2].params,
+                              total_time=total_time, dt_sample=dt_sample).
               generate_simulation(plot=plot)]
+
+    # f = EdfReader(
+    #     '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/' +
+    #     'I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf')
+    # chan = 0
+    # data = f.readSignal(chan)
+    # sample_freq = f.getSampleFrequency(chan)
+    # if not total_time:
+    #     num_samples = len(data)
+    #     total_time = num_samples / sample_freq
+    # data = data[::int(round(sample_freq * dt_sample))]
+    # data = data[:int(total_time / dt_sample)] / 1000.
+    # total_time = min(total_time, len(data) * dt_sample)
+
+    # f._close()
+    # del f
+
+    # if plot:
+    #     plt.plot(np.arange(0, total_time, dt_sample), data)
+
+    # target = [data]
+    # protocols = [Protocol(prot_id='1', total_time=total_time)]
 
     return protocols, target
 
@@ -303,7 +340,7 @@ def rmse(estimate, target):
     return np.sqrt(((estimate - target)**2).mean())
 
 
-def protocol_outcome(protocol, param=param_epileptor, plot=False):
+def protocol_outcome(protocol, param=param_epileptor, plot=plot):
     """Compute the average synaptic gain for a given stimulation protocol and
     model parameters.
 
@@ -313,7 +350,7 @@ def protocol_outcome(protocol, param=param_epileptor, plot=False):
         Parameters of the Epileptor model
     """
 
-    estimate = epileptor_model(param).generate_simulation(plot=plot)
-    # TODO: Fix this later to actually run different protocols and parameters
+    estimate = epileptor_model(param, total_time=protocol.total_time).\
+        generate_simulation(plot=plot)
 
     return estimate
