@@ -36,13 +36,17 @@ def get_epileptor_params(params):
     :rtype : dict
     """
     ep_param = {
+        # 'a': 5.,
+        # 'b': 4.,
+        # 'c': 0.3,
+        # 'd': 3.5,
         'x0': -1.6,
         'y0': 1.,
         # 'tau0': 2857.,
         'tau1': 1.0,
         'tau2': 10.,
-        'Irest1': 3.1,
-        'Irest2': 0.45,
+        # 'Irest1': 3.1,
+        # 'Irest2': 0.45,
         'gamma': 1e-2,
         'x1_init': 0.,
         # 'y1_init': -5.,
@@ -53,7 +57,6 @@ def get_epileptor_params(params):
         'observation_sigmas': 0.,
         'noise_ensemble1': 0.,
         'noise_ensemble2': 0.}  # Fixed params;
-    # x0 will be optimized; set all noise to 0
 
     for param_name, param_value in params:
         ep_param[param_name] = param_value
@@ -72,9 +75,16 @@ class Epileptor_Evaluator(object):
         super(Epileptor_Evaluator, self).__init__()
         # Graupner-Brunel model parameters and boundaries,
         # from (Graupner and Brunel, 2012)
-        self.ep_params = [('y1_init', -20., 5.),
+        self.ep_params = [('y1_init', -10., 0.),
                           ('z_init', 2., 6.),
-                          ('tau0', 1000., 5000.)]
+                          ('tau0', 1000., 4000.),
+                          ('a', 3., 5.5),
+                          ('b', 2., 8.),
+                          ('c', 0., 0.6),
+                          ('d', 3., 4.5),
+                          ('Irest1', 2.8, 4.),
+                          ('Irest2', 0.2, 0.7)]
+        # TODO: think about appropriate ranges for a and b
 
         self.params = [bpop.parameters.Parameter
                        (param_name, bounds=(min_bound, max_bound))
@@ -92,6 +102,7 @@ class Epileptor_Evaluator(object):
                            for protocol in self.protocols]
 
         self.plot = plot
+        self.total_time = total_time
 
     def get_param_dict(self, param_values):
         """Build dictionary of parameters for the Epileptor model from an
