@@ -1,2 +1,5 @@
 .ipynb_checkpoints
 *.m~
+output.o*
+output.po*
+
