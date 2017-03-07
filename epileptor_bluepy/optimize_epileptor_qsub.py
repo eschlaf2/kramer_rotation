@@ -16,14 +16,14 @@ def load_obj(name):
 if __name__ == '__main__':
     hall_of_fame = []
     for i in range(1):
-        evaluator = epileptor_evaluator.Epileptor_Evaluator(plot=False,
-                                                            total_time=250,
-                                                            dt_sample=0.1)
-    opt = bpop.optimisations.DEAPOptimisation(evaluator, offspring_size=3,
-                                              eta=20, mutpb=0.3, cxpb=0.7,
-                                              seed=i, use_scoop=True)
-    final_pop, hof_temp, log, hst = opt.run(max_ngen=3)
-    hall_of_fame.append(hof_temp[0])
-    params = evaluator.get_param_dict(hall_of_fame[0])
-    save_obj(params, 'params')
+        evaluator = epileptor_evaluator.\
+            Epileptor_Evaluator(plot=False, total_time=2500, dt_sample=0.1)
+        opt = bpop.optimisations.\
+            DEAPOptimisation(evaluator, offspring_size=50,
+                             eta=20, mutpb=0.3, cxpb=0.7,
+                             seed=i, use_scoop=True)
+        final_pop, hof_temp, log, hst = opt.run(max_ngen=100)
+        hall_of_fame.append(hof_temp[0])
+        params = evaluator.get_param_dict(hof_temp[0])
+        save_obj(params, 'params{}'.format(i))
     save_obj(hall_of_fame, 'hall_of_fame')
