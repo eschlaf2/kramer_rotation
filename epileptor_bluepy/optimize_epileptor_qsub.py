@@ -1,6 +1,7 @@
 import bluepyopt as bpop
 import epileptor_evaluator
 import pickle
+import time
 
 
 def save_obj(obj, name):
@@ -15,7 +16,8 @@ def load_obj(name):
 
 if __name__ == '__main__':
     hall_of_fame = []
-    for i in range(1):
+    for i in range(2):
+        t0 = time.time()
         evaluator = epileptor_evaluator.\
             Epileptor_Evaluator(plot=False, total_time=2500, dt_sample=0.1)
         opt = bpop.optimisations.\
@@ -23,6 +25,8 @@ if __name__ == '__main__':
                              eta=20, mutpb=0.3, cxpb=0.7,
                              seed=i, use_scoop=True)
         final_pop, hof_temp, log, hst = opt.run(max_ngen=100)
+        t_total = time.time() - t0
+        print('Time {}: {}\n'.format(i, t_total))
         hall_of_fame.append(hof_temp[0])
         params = evaluator.get_param_dict(hof_temp[0])
         save_obj(params, 'params{}'.format(i))
