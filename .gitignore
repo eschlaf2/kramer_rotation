@@ -2,4 +2,4 @@
 *.m~
 output.o*
 output.po*
-
+*/out*.txt
