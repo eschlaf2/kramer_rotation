@@ -1,0 +1,4 @@
+total_time=2500
+dt_sample=0.1
+offspring_size=10
+max_ngen=20
