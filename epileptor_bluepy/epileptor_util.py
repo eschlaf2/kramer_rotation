@@ -72,8 +72,10 @@ class Protocol(object):
 
     """Protocol"""
 
-    def __init__(self, params=param_epileptor,
+    def __init__(self, params=None,
                  total_time=2500, prot_id=None, **kwargs):
+        if not params:
+            params = dict(param_epileptor)
         self.prot_id = prot_id
         self.params = dict(params)
         self.total_time = total_time
@@ -133,6 +135,8 @@ class Model(object):
             x_temp = true_state[:, n]
             true_state[:, n + 1] = \
                 self.integrate(state=x_temp, params=self.parameters[:, n])
+            if any(np.isinf(true_state[:, n + 1])):
+                break
         return true_state
 
     def plot_simulated_data(self):
