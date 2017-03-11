@@ -127,6 +127,20 @@ class Model(object):
             self.plot_simulated_data()
         return self.noisy_data  # if noisy else self.data
 
+    def integrate(self, state, time_varying_params):
+        switcher = {
+            'ruku4': integrators.ruku4,
+            'euler': integrators.euler,
+            'euler_maruyama': integrators.euler_maruyama,
+            'test_integrator': integrators.test_integrator
+        }
+        return switcher[self.integrator](self.model_function,
+                                         state,
+                                         time_varying_params,
+                                         self.dt_integrate,
+                                         self.steps_per_sample,
+                                         self.noise)
+
     def integrate_model(self):
         true_state = np.zeros((len(self.initial_conditions),
                                self._num_samples))  # allocate
@@ -252,23 +266,12 @@ class epileptor_model(Model):
     num_samples = property(lambda self: self._num_samples)
     steps_per_sample = property(lambda self: self._steps_per_sample)
 
-    def integrate(self, state, params):
-        switcher = {
-            'ruku4': integrators.ruku4,
-            'euler': integrators.euler,
-            'euler_maruyama': integrators.euler_maruyama,
-            'test_integrator': integrators.test_integrator
-        }
-        return switcher[self.integrator](self.model_function,
-                                         state,
-                                         params,
-                                         self.dt_integrate,
-                                         self.steps_per_sample,
-                                         self.noise)
-
-    def model_function(self, state, parameters):
+    def model_function(self, state, time_varying_params):
+        '''
+        TODO: unscented kalman filter parameter
+        '''
         x1, y1, z, x2, y2, g = state
-        x0 = parameters.reshape(x1.shape)
+        x0 = time_varying_params.reshape(x1.shape)
         x1_dot = y1 - self.f1(x1, x2, z) - z + self.Irest1
         y1_dot = self.y0 - self.a * x1 * x1 - y1  # a = 5., tvb param d
         z_dot = 1. / self.tau0 * \
