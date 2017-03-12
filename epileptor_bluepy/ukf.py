@@ -49,14 +49,32 @@ def symmetrize(A):
     return (A + np.transpose(A)) / 2
 
 
+def create_sigma_list(value, dim):
+    if type(value) in [float, int]:
+        return list(value * np.ones(dim))
+    else:
+        value = list(value)
+        while len(value) < dim:
+            value.append(0.)
+        return value[:dim]
+
+
+def keep_in_bounds(value, bounds=(-30, 30)):
+    type_temp = type(value)
+    value = np.array(value)
+    value[value < bounds[0]] = bounds[0]
+    value[value > bounds[1]] = bounds[1]
+    return type_temp(value) if type_temp != np.ndarray else value
+
+
 class unscented_kalman_filter(Model):
-    def __init__(self, model):
+    def __init__(self, model, process_sigma=15e-3, observation_sigma=15e-3):
         self.model = model
+        self.process_sigma = process_sigma
+        self.observation_sigma = observation_sigma
         self.sigma_points = []
         self.results = []
         self.initial_estimate = []
-        self.Pxx = np.zeros((model.dims_augmented_state,
-                             model.dims_augmented_state, model.num_samples))
         self.set_covariances()
         self.estimated_state = np.zeros((model.dims_augmented_state,
                                          model.num_samples))
@@ -64,38 +82,61 @@ class unscented_kalman_filter(Model):
         self.Ks = np.zeros((model.dims_augmented_state,
                             model.dims_observations, model.num_samples))
 
-    def set_initial_estimate(self, initial_estimate=[], randrange=[]):
+    def set_initial_estimate(self, initial_estimate='model', randrange=0.):
         model = self.model
-        if initial_estimate:
-            self.estimated_state[:, 0] = initial_estimate
-        elif randrange and np.all(np.array(randrange) >= 0):
-            if len(randrange) == 1:
-                r0, rf = 0, int(np.fix(randrange))
-            else:
-                r0, rf = int(np.fix(randrange[0])), int(np.fix(randrange[1]))
-            r = 2 * rf
-            initial_estimate = -rf + np.random.randint(
-                r0, r, model.augmented_state[:, 0].shape) + \
-                model.augmented_state[:, 0]
-            self.estimated_state[:, 0] = \
-                model.set_initial_estimate(initial_estimate)
-        elif self.initial_estimate:
-            self.estimated_state[:, 0] = self.initial_estimate
+        switcher = {
+            'model': model.set_initial_estimate(
+                np.zeros(model.dims_augmented_state)),
+            'zeros': np.zeros(model.dims_augmented_state),
+            'exact': model.augmented_state[:, 0]
+        }
+        if type(initial_estimate) == str:
+            self.estimated_state[:, 0] = switcher[initial_estimate]
         else:
-            self.estimated_state[:, 0] = model.augmented_state[:, 0]
+            self.estimated_state[:, 0] = \
+                create_sigma_list(initial_estimate, model.dims_augmented_state)
+        if randrange > 0:
+            random_smear = np.random.rand(model.dims_augmented_state) * \
+                randrange * 2 - randrange
+            self.estimated_state[:, 0] += random_smear
+
+        # if initial_estimate:
+        #     self.estimated_state[:, 0] = initial_estimate
+        # elif randrange and np.all(np.array(randrange) >= 0):
+        #     if len(randrange) == 1:
+        #         r0, rf = 0, int(np.fix(randrange))
+        #     else:
+        #         r0, rf = int(np.fix(randrange[0])), int(np.fix(randrange[1]))
+        #     r = 2 * rf
+        #     initial_estimate = -rf + np.random.randint(
+        #         r0, r, model.augmented_state[:, 0].shape) + \
+        #         model.augmented_state[:, 0]
+        #     self.estimated_state[:, 0] = \
+        #         model.set_initial_estimate(initial_estimate)
+        # elif self.initial_estimate:
+        #     self.estimated_state[:, 0] = self.initial_estimate
+        # else:
+        #     self.estimated_state[:, 0] = model.augmented_state[:, 0]
 
     def set_covariances(self):
         model = self.model
-        sigmas = {}
-        sigmas['Q'] = model.process_sigmas
-        sigmas['R'] = model.observation_sigmas
-        Pxx_init = []
-        for n in model.Pxx0:
-            Pxx_init = np.hstack((Pxx_init, sigmas[n]))
-        Pxx_init = np.diag(Pxx_init)
-        self.Q = np.diag(sigmas['Q'])
-        self.R = np.diag(sigmas['R'])
-        self.Pxx[:, :, 0] = Pxx_init
+        self.Pxx = np.zeros((model.dims_augmented_state,
+                             model.dims_augmented_state, model.num_samples))
+        # sigmas = {}
+        # sigmas['Q'] = self.process_sigma
+        # sigmas['R'] = self.observation_sigma
+        # Pxx_init = []
+        # for n in model.Pxx0:
+        #     Pxx_init = np.hstack((Pxx_init, sigmas[n]))
+        # Pxx_init = np.diag(Pxx_init)
+        # self.Q = np.diag(sigmas['Q'])
+        # self.R = np.diag(sigmas['R'])
+        self.Q = create_sigma_list(
+            self.process_sigma, model.dims_params)
+        self.R = create_sigma_list(
+            self.observation_sigma, model.dims_state_vars)
+        # self.Pxx[:, :, 0] = Pxx_init
+        self.Pxx[:, :, 0] = np.diag(np.hstack((self.Q, self.R)))
 
     def generate_sigma_points(self, k):
         '''Why have the extra terms from the Cholesky decomp??
@@ -121,7 +162,8 @@ class unscented_kalman_filter(Model):
                 self.Pxx[:, :, k - 1] = self.Pxx[:, :, k - 2]
                 self.voss_unscented_transform(k)
             if model.dims_params > 0:
-                self.Pxx[:model.dims_params, :model.dims_params, k] = self.Q
+                self.Pxx[:model.dims_params, :model.dims_params, k] = \
+                    np.diag(self.Q)
             self.errors[:, k] = np.sqrt(np.diag(self.Pxx[:, :, k]))
 
     def voss_unscented_transform(self, k):
@@ -129,12 +171,12 @@ class unscented_kalman_filter(Model):
         Pxx = symmetrize(self.Pxx[:, :, k - 1])
         self.generate_sigma_points(k)
         sigma_points = self.sigma_points
-        
+
         X = model.transition_function(sigma_points)
         Y = model.observation_function(X).reshape(1, -1)
 
         Pxx = symmetrize(covariance(X, X))
-        Pyy = covariance(Y, Y) + self.R
+        Pyy = covariance(Y, Y) + self.observation_sigma
         Pxy = covariance(X, Y)
 
         K = np.matmul(Pxy, la.inv(Pyy))
@@ -143,8 +185,8 @@ class unscented_kalman_filter(Model):
 
         Pxx = symmetrize(Pxx - np.matmul(K, Pxy.T))
 
-        self.estimated_state[:, k] = xhat
-        self.Pxx[:, :, k] = Pxx
+        self.estimated_state[:, k] = keep_in_bounds(xhat)
+        self.Pxx[:, :, k] = keep_in_bounds(Pxx, bounds=(-100, 100))
         self.Ks[:, :, k] = K
 
     def print_results(self):
@@ -162,30 +204,47 @@ class unscented_kalman_filter(Model):
             print('{0:15s}{1}'.format(key + ':', str(value)))
         self.results = results
 
-    def plot_filter_results(self):
+    def plot_filter_results(self, separated=False):
         '''Plots results of Kalman filtering'''
         model = self.model
         plt.rc('text', usetex=True)
         plt.figure(figsize=(10, 2))
         for i in range(model.dims_state_vars):
+            if separated and i > 0:
+                plt.figure(figsize=(10, 2))
             plt.plot(model.augmented_state[model.dims_params + i, :],
                      lw=2, label=model.var_names[i])
             plt.plot(self.estimated_state[model.dims_params + i, :],
                      'r--', lw=2)
-        plt.title('Estimated State Variables')
-        plt.legend()
-        plt.xlabel('t/dt')
-        plt.axis('tight')
+            if separated:
+                plt.title(model.var_names[i])
+                plt.xlabel('t/dt')
+                plt.axis('tight')
+                plt.show()
+        if not separated:
+            plt.title('Estimated State Variables')
+            plt.legend()
+            plt.xlabel('t/dt')
+            plt.axis('tight')
+            plt.show()
 
         plt.figure(figsize=(10, 2))
         for i in range(model.dims_params):
+            if separated and i > 0:
+                plt.figure(figsize=(10, 2))
             plt.plot(model.augmented_state[i, :], 'k',
                      linewidth=2, label=model.parameter_names[i])
             plt.plot(self.estimated_state[i, :], 'm', linewidth=2)
             plt.plot(self.estimated_state[i, :] + self.errors[i, :], 'm')
             plt.plot(self.estimated_state[i, :] - self.errors[i, :], 'm')
-        plt.title('Estimated Parameters')
-        plt.legend()
-        plt.xlabel('t/dt')
-        plt.axis('tight')
-        plt.show()
+            if separated:
+                plt.title(model.parameter_names[i])
+                plt.xlabel('t/dt')
+                plt.axis('tight')
+                plt.show()
+        if not separated:
+            plt.title('Estimated Parameters')
+            plt.legend()
+            plt.xlabel('t/dt')
+            plt.axis('tight')
+            plt.show()

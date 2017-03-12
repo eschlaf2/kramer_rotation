@@ -148,7 +148,8 @@ class Model(object):
         for n in range(self._num_samples - 1):
             x_temp = true_state[:, n]
             true_state[:, n + 1] = \
-                self.integrate(state=x_temp, params=self.parameters[:, n])
+                self.integrate(state=x_temp,
+                               time_varying_params=self.parameters[:, n])
             if any(np.isinf(true_state[:, n + 1])):
                 break
         return true_state
