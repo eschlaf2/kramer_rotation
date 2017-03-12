@@ -23,7 +23,7 @@ if __name__ == '__main__':
           'offspring_size: {}\nmax_ngen {}\n').
           format(total_time, dt_sample, offspring_size, max_ngen))
     hall_of_fame = []
-    for i in range(2):
+    for i in range(1):
         t0 = time.time()
         evaluator = epileptor_evaluator.\
             Epileptor_Evaluator(plot=False, total_time=total_time, 
