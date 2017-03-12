@@ -5,4 +5,7 @@ output.po*
 */out*.txt
 *Untitled*
 out.txt
-
+*/test.py
+test.py
+*.pyc
+*_fail
