@@ -55,7 +55,7 @@ def create_sigma_list(value, dim):
     else:
         value = list(value)
         while len(value) < dim:
-            value.append(0.)
+            value.append(1e-16)
         return value[:dim]
 
 
@@ -68,10 +68,10 @@ def keep_in_bounds(value, bounds=(-30, 30)):
 
 
 class unscented_kalman_filter(Model):
-    def __init__(self, model, process_sigma=15e-3, observation_sigma=15e-3):
+    def __init__(self, model, parameter_sigma=15e-3, state_sigma=15e-3):
         self.model = model
-        self.process_sigma = process_sigma
-        self.observation_sigma = observation_sigma
+        self.parameter_sigma = parameter_sigma
+        self.state_sigma = state_sigma
         self.sigma_points = []
         self.results = []
         self.initial_estimate = []
@@ -101,6 +101,10 @@ class unscented_kalman_filter(Model):
             random_smear = np.random.rand(model.dims_augmented_state) * \
                 randrange * 2 - randrange
             self.estimated_state[:, 0] += random_smear
+        for i in range(model.dims_params):
+            sigmas = self.Q
+            if sigmas[i] < 1e-15:
+                self.estimated_state[i, 0] = model.augmented_state[i, 0]
 
         # if initial_estimate:
         #     self.estimated_state[:, 0] = initial_estimate
@@ -125,18 +129,20 @@ class unscented_kalman_filter(Model):
         self.Pxx = np.zeros((model.dims_augmented_state,
                              model.dims_augmented_state, model.num_samples))
         # sigmas = {}
-        # sigmas['Q'] = self.process_sigma
-        # sigmas['R'] = self.observation_sigma
+        # sigmas['Q'] = self.parameter_sigma
+        # sigmas['R'] = self.state_sigma
         # Pxx_init = []
         # for n in model.Pxx0:
         #     Pxx_init = np.hstack((Pxx_init, sigmas[n]))
         # Pxx_init = np.diag(Pxx_init)
         # self.Q = np.diag(sigmas['Q'])
         # self.R = np.diag(sigmas['R'])
-        self.Q = create_sigma_list(
-            self.process_sigma, model.dims_params)
-        self.R = create_sigma_list(
-            self.observation_sigma, model.dims_state_vars)
+        self.Q = keep_in_bounds(create_sigma_list(
+            self.parameter_sigma, model.dims_params),
+            bounds=(1e-16, 100))
+        self.R = keep_in_bounds(create_sigma_list(
+            self.state_sigma, model.dims_state_vars),
+            bounds=(1e-16, 100))
         # self.Pxx[:, :, 0] = Pxx_init
         self.Pxx[:, :, 0] = np.diag(np.hstack((self.Q, self.R)))
 
@@ -158,9 +164,12 @@ class unscented_kalman_filter(Model):
         model = self.model
         self.set_initial_estimate(initial_estimate=initial_estimate)
         for k in range(1, model.num_samples):
+            self.k = k
             try:
                 self.voss_unscented_transform(k)
             except la.LinAlgError:
+                logging_debug('LinAlgError\nk: {}\nPxx: {}'.format(
+                    k, self.Pxx[:, :, k - 1]))
                 self.Pxx[:, :, k - 1] = self.Pxx[:, :, k - 2]
                 self.voss_unscented_transform(k)
             if model.dims_params > 0:
@@ -178,7 +187,7 @@ class unscented_kalman_filter(Model):
         Y = model.observation_function(X).reshape(1, -1)
 
         Pxx = symmetrize(covariance(X, X))
-        Pyy = covariance(Y, Y) + self.observation_sigma
+        Pyy = covariance(Y, Y) + self.state_sigma
         Pxy = covariance(X, Y)
 
         K = np.matmul(Pxy, la.inv(Pyy))
@@ -237,9 +246,10 @@ class unscented_kalman_filter(Model):
         plt.xlabel('t/dt')
         plt.show()
 
-        plt.figure(figsize=(10, 2))
         for i in range(model.dims_params):
-            if separated and i > 0:
+            if self.Q[i] < 1e-15:
+                continue
+            if i == 0 or (separated and i > 0):
                 plt.figure(figsize=(10, 2))
             plt.plot(model.augmented_state[i, :], 'k',
                      linewidth=2, label=model.parameter_names[i])
