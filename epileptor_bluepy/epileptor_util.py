@@ -215,7 +215,7 @@ class epileptor_model(Model):
         self.integrator = 'ruku4'
 
         self.var_names = ['x1', 'y1', 'z', 'x2', 'y2', 'g']
-        self.parameter_names = ['x0']
+        self.parameter_names = ['$I_{ext1}$', '$I_{ext2}$', '$I_{extz}$']
 
         self.dims_params = len(self.parameter_names)
         self.dims_state_vars = len(self.var_names)
@@ -230,10 +230,16 @@ class epileptor_model(Model):
         self._steps_per_sample = int(set_steps_per_sample(
             self._dt_sample, self._dt_integrate))
 
-        x0_parameter = (
-            self.x0 * np.ones(self._num_samples)).reshape(
+        I_ext1 = (
+            self.Irest1 * np.ones(self._num_samples)).reshape(
             1, self._num_samples)
-        self.parameters = x0_parameter
+        I_ext2 = (
+            self.Irest2 * np.ones(self._num_samples)).reshape(
+            1, self._num_samples)
+        I_extz = (
+            0. * np.ones(self._num_samples)).reshape(
+            1, self._num_samples)
+        self.parameters = np.vstack((I_ext1, I_ext2, I_extz))
 
     def _get_total_time(self):
         return self._total_time
@@ -272,13 +278,14 @@ class epileptor_model(Model):
         TODO: unscented kalman filter parameter
         '''
         x1, y1, z, x2, y2, g = state
-        x0 = time_varying_params.reshape(x1.shape)
-        x1_dot = y1 - self.f1(x1, x2, z) - z + self.Irest1
+        # I_ext = time_varying_params.reshape(x1.shape)
+        I_ext1, I_ext2, I_extz = time_varying_params
+        x1_dot = y1 - self.f1(x1, x2, z) - z + I_ext1  # self.Irest1
         y1_dot = self.y0 - self.a * x1 * x1 - y1  # a = 5., tvb param d
         z_dot = 1. / self.tau0 * \
-            (self.b * (x1 - x0) - z)  # b = 4., tvb const
-        x2_dot = -y2 + x2 - x2**3 + self.Irest2 + \
-            2. * g - self.c * (z - self.d)  # c = 0.3, d = 3.5
+            (self.b * (x1 - self.x0) - z) + I_extz  # b = 4., tvb const
+        x2_dot = -y2 + x2 - x2**3 + I_ext2 + \
+            2. * g - self.c * (z - self.d)  # + self.Irest2 c = 0.3, d = 3.5
         y2_dot = 1 / self.tau2 * (-y2 + self.f2(x2))
         g_dot = -self.gamma * (g - 0.1 * x1)
         return np.array([x1_dot, y1_dot, z_dot, x2_dot, y2_dot, g_dot])

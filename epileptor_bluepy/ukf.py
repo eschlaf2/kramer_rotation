@@ -82,8 +82,10 @@ class unscented_kalman_filter(Model):
         self.Ks = np.zeros((model.dims_augmented_state,
                             model.dims_observations, model.num_samples))
 
-    def set_initial_estimate(self, initial_estimate='model', randrange=0.):
+    def set_initial_estimate(self, initial_estimate=None, randrange=0.):
         model = self.model
+        if initial_estimate is None:
+            initial_estimate = 'model'
         switcher = {
             'model': model.set_initial_estimate(
                 np.zeros(model.dims_augmented_state)),
@@ -152,9 +154,9 @@ class unscented_kalman_filter(Model):
             sigma_points[:, i] += xhat
         self.sigma_points = sigma_points
 
-    def unscented_kalman(self):
+    def unscented_kalman(self, initial_estimate=[]):
         model = self.model
-        self.set_initial_estimate()
+        self.set_initial_estimate(initial_estimate=initial_estimate)
         for k in range(1, model.num_samples):
             try:
                 self.voss_unscented_transform(k)
@@ -227,6 +229,13 @@ class unscented_kalman_filter(Model):
             plt.xlabel('t/dt')
             plt.axis('tight')
             plt.show()
+        plt.figure(figsize=(10, 2))
+        plt.plot(model.noisy_data[0], 'k')
+        plt.plot(model.observation_function(self.estimated_state), 'r')
+        plt.title('Observed Results')
+        plt.axis('tight')
+        plt.xlabel('t/dt')
+        plt.show()
 
         plt.figure(figsize=(10, 2))
         for i in range(model.dims_params):
