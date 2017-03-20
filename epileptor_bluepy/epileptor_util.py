@@ -286,7 +286,7 @@ class epileptor_model(Model):
             (self.b * (x1 - self.x0) - z) + I_extz  # b = 4., tvb const
         x2_dot = -y2 + x2 - x2**3 + I_ext2 + \
             2. * g - self.c * (z - self.d)  # + self.Irest2 c = 0.3, d = 3.5
-        y2_dot = 1 / self.tau2 * (-y2 + self.f2(x2))
+        y2_dot = (-y2 + self.f2(x2)) / self.tau2
         g_dot = -self.gamma * (g - 0.1 * x1)
         return np.array([x1_dot, y1_dot, z_dot, x2_dot, y2_dot, g_dot])
 

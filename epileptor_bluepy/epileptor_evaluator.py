@@ -75,7 +75,7 @@ class Epileptor_Evaluator(object):
         super(Epileptor_Evaluator, self).__init__()
         # Graupner-Brunel model parameters and boundaries,
         # from (Graupner and Brunel, 2012)
-        self.ep_params = [('y1_init', -10., 0.),
+        self.ep_params = [('y1_init', -20., 0.),
                           ('z_init', 2., 6.),
                           ('tau0', 1000., 4000.),
                           ('a', 3., 5.5),
