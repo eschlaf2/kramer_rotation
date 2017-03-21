@@ -15,10 +15,10 @@ Utility functions for calcium-based STDP using simplified calcium model as in
 import logging
 import numpy as np
 import integrators
+import pickle
 import matplotlib.pyplot as plt
 from integrators import ruku4
 from pyedflib import EdfReader
-import copy
 
 logging.basicConfig(level=logging.WARN)
 
@@ -66,6 +66,41 @@ param_epileptor = {
     'b': 4.,
     'c': 0.3,
     'd': 3.5}
+
+
+def load_obj(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
+
+
+def read_edf_file(filename):
+    f = EdfReader(filename)
+    chan = 0
+    data = f.readSignal(chan) / 1000.
+    sample_freq = f.getSampleFrequency(chan) 
+    f._close()
+    return data, sample_freq
+
+def read_pkl_file(filename):
+    f = load_obj(filename)
+    return f.noisy_data[0].reshape(-1), int(round(1./f.dt_sample))
+
+
+def subsample_data(data, sample_freq, dt_sample):
+    dt_sample = max(dt_sample, 1./sample_freq)
+    data = data[::int(sample_freq*dt_sample)]
+    total_time = len(data)
+    return data, dt_sample, total_time
+
+
+def read_file(filename):
+    filetype_switcher = {
+            'edf': read_edf_file,
+            'pkl': read_pkl_file
+        }
+    filetype = filename.split('.')[-1]
+    data, sample_freq = filetype_switcher[filetype](filename)
+    return data, sample_freq
 
 
 class Protocol(object):
@@ -159,6 +194,7 @@ class Model(object):
         plt.rc('text', usetex=True)
         plt.figure(figsize=(10, 2))
         plt.plot(self.noisy_data[0, :],
+        # plt.plot(self.target[0],
                  'bd', markeredgecolor='blue',
                  mfc='blue', ms=3, label='noisy data')
         plt.plot(self.observation_function(self.augmented_state).T,
@@ -320,11 +356,9 @@ class epileptor_model(Model):
         return 0. * (x2 < -0.25) + (6 * (x2 + 0.25)) * (x2 >= -0.25)
 
 
-def load_protocols(plot=plot, total_time=[], dt_sample=0.1):
+def load_protocols(filename=None, plot=plot, total_time=None, dt_sample=0.1):
     """Load simulation using params from Jirsa, 2014."""
 
-    if not total_time:
-        total_time = 2500
     # protocols = [Protocol(prot_id='default'),
     #              Protocol(prot_id='clean', observation_sigmas=0., tau0=1000),
     #              Protocol(prot_id='noiseless',
@@ -341,10 +375,27 @@ def load_protocols(plot=plot, total_time=[], dt_sample=0.1):
     #           epileptor_model(params=protocols[2].params,
     #                           total_time=total_time, dt_sample=dt_sample).
     #           generate_simulation(plot=plot)]
-    protocols = [Protocol(prot_id='default', total_time=total_time)]
-    target = [epileptor_model(params=protocols[0].params,
-                              total_time=total_time, dt_sample=dt_sample).
-              generate_simulation(plot=plot)]
+
+    if filename is None:
+        if total_time is None:
+            total_time = 2500
+
+        protocols = [Protocol(prot_id='default', total_time=total_time)]
+        target = [epileptor_model(params=protocols[0].params,
+                                  total_time=total_time, dt_sample=dt_sample).
+                  generate_simulation(plot=plot)[0]]
+    else:
+        prot_id = filename.split('/')[-1]
+        data, sample_freq = read_file(filename)
+        data, dt_sample, num_samples = \
+            subsample_data(data, sample_freq, dt_sample)
+        if total_time is None:
+            total_time = num_samples//dt_sample
+        else:
+            total_time = min(total_time, num_samples//dt_sample)
+
+        protocols = [Protocol(prot_id=prot_id, total_time=total_time)]
+        target = [data[:int(total_time/dt_sample)]]
 
     # f = EdfReader(
     #     '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/' +
