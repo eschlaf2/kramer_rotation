@@ -15,9 +15,9 @@ def load_obj(name):
         return pickle.load(f)
 
 
-filename = '/Users/emilyschlafly/BU/Kramer_rotation/' + \
-    'ieeg_data/I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf'
-# filename = '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/target.pkl'
+# filename = '/Users/emilyschlafly/BU/Kramer_rotation/' + \
+#     'ieeg_data/I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf'
+filename = '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/target.pkl'
 
 if __name__ == '__main__':
     seed = sys.argv[1]
