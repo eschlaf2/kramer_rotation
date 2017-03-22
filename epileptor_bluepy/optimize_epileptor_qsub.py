@@ -19,8 +19,8 @@ if __name__ == '__main__':
     seed = sys.argv[1]
     total_time = 2500
     dt_sample = 0.1
-    offspring_size = 3
-    max_ngen = 3
+    offspring_size = 50
+    max_ngen = 25
     print(('\ntotal_time: {}\ndt_sample: {}\n' +
           'offspring_size: {}\nmax_ngen {}\n').
           format(total_time, dt_sample, offspring_size, max_ngen))
@@ -40,4 +40,7 @@ if __name__ == '__main__':
         hall_of_fame.append(hof_temp[0])
         params = evaluator.get_param_dict(hof_temp[0])
         save_obj(params, 'params{}'.format(s))
-    save_obj(hall_of_fame, 'hall_of_fame')
+        save_obj(evaluator.target, 'target{}'.format(s))
+        save_obj(log, 'log{}'.format(s))
+        save_obj(hst, 'hst{}'.format(s))
+    save_obj(hall_of_fame, 'hall_of_fame{}'.format(s))
