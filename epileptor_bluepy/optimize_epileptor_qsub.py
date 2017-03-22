@@ -21,10 +21,11 @@ filename = '/Users/emilyschlafly/BU/Kramer_rotation/' + \
 
 if __name__ == '__main__':
     seed = sys.argv[1]
+    filename = sys.argv[2]
     dt_sample = 0.1
-    total_time = 250
-    offspring_size = 3
-    max_ngen = 3
+    total_time = None
+    offspring_size = 1
+    max_ngen = 1
     hall_of_fame = []
 
     print(('\nfilename: {}\ntotal_time: {}\ndt_sample: {}\n' +

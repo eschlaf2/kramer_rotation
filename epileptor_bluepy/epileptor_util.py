@@ -381,6 +381,7 @@ def load_protocols(filename=None, plot=plot, total_time=None, dt_sample=0.1):
             total_time = 2500
 
         protocols = [Protocol(prot_id='default', total_time=total_time)]
+        print(total_time)
         target = [epileptor_model(params=protocols[0].params,
                                   total_time=total_time, dt_sample=dt_sample).
                   generate_simulation(plot=plot)[0]]
