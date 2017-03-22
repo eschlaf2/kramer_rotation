@@ -1,0 +1,7 @@
+import: unable to open X server `' @ error/import.c/ImportImageCommand/368.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/368.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/368.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/368.
+import: unable to open X server `' @ error/import.c/ImportImageCommand/368.
+/var/spool/sge/scc-jd2/job_scripts/8012362: line 8: syntax error near unexpected token `('
+/var/spool/sge/scc-jd2/job_scripts/8012362: line 8: `def save_obj(obj, name):'
