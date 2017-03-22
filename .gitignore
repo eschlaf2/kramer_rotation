@@ -9,3 +9,4 @@ out.txt
 test.py
 *.pyc
 *_fail
+.DS_Store

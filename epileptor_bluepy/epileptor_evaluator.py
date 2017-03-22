@@ -69,13 +69,12 @@ class Epileptor_Evaluator(object):
 
     """Epileptor Evaluator"""
 
-    def __init__(self, plot=plot, total_time=2500, dt_sample=.1):
+    def __init__(self, filename=None, plot=plot,
+                 total_time=2500, dt_sample=.1):
         """Constructor"""
 
         super(Epileptor_Evaluator, self).__init__()
-        # Graupner-Brunel model parameters and boundaries,
-        # from (Graupner and Brunel, 2012)
-        self.ep_params = [('y1_init', -10., 0.),
+        self.ep_params = [('y1_init', -20., 0.),
                           ('z_init', 2., 6.),
                           ('tau0', 1000., 4000.),
                           ('a', 3., 5.5),
@@ -94,7 +93,8 @@ class Epileptor_Evaluator(object):
         self.param_names = [param.name for param in self.params]
 
         self.protocols, self.target = epileptor_util.\
-            load_protocols(plot=plot, total_time=total_time,
+            load_protocols(filename=filename, plot=plot,
+                           total_time=total_time,
                            dt_sample=dt_sample)
         # protocols and targets for each protocol
 
@@ -122,7 +122,7 @@ class Epileptor_Evaluator(object):
         param_dict = self.get_param_dict(param_values)
 
         outcome = [epileptor_util.
-                   protocol_outcome(protocol, param_dict, plot=self.plot)
+                   protocol_outcome(protocol, param_dict, plot=False)
                    for protocol in self.protocols]
 
         return outcome
@@ -148,7 +148,7 @@ class Epileptor_Evaluator(object):
             err.append(epileptor_util.rmse(target, result))
             if self.plot:
                 fig, ax1 = plt.subplots(figsize=(10, 2))
-                ax1.plot(target[0], 'r')
+                ax1.plot(target, 'r')
                 # ax1.set_ylabel('target', color='r')
                 # ax2 = ax1.twinx()
                 ax1.plot(result[0], 'b')

@@ -4,12 +4,116 @@
 		"selected_items":
 		[
 			[
-				"obs",
-				"observation_sigmas"
+				"dims",
+				"dims_augmented_state"
+			],
+			[
+				"I_ext",
+				"I_extz"
+			],
+			[
+				"Iex",
+				"I_extz"
+			],
+			[
+				"I",
+				"I_ext1\tstatement"
+			],
+			[
+				"Irest",
+				"Irest2"
+			],
+			[
+				"ob",
+				"observation_function"
+			],
+			[
+				"random",
+				"random_smear\tstatement"
+			],
+			[
+				"rand",
+				"random\tmodule"
+			],
+			[
+				"str",
+				"str\tclass"
+			],
+			[
+				"type",
+				"type_temp"
+			],
+			[
+				"dim",
+				"dims_params"
+			],
+			[
+				"pro",
+				"process_sigma\tstatement"
+			],
+			[
+				"set",
+				"set_initial_estimate"
+			],
+			[
+				"est",
+				"estimated_state\tstatement"
+			],
+			[
+				"error",
+				"error_flag\tstatement"
+			],
+			[
+				"err",
+				"error_flag"
+			],
+			[
+				"loggi",
+				"logging_debug"
+			],
+			[
+				"logg",
+				"logging_debug\tfunction"
+			],
+			[
+				"logging",
+				"logging_debug\tfunction"
+			],
+			[
+				"sh",
+				"shape"
+			],
+			[
+				"observa",
+				"observation_noise\tstatement"
+			],
+			[
+				"observation",
+				"observation_noise"
 			],
 			[
 				"obser",
-				"observation_sigmas\tstatement"
+				"observation_noise"
+			],
+			[
+				"fi",
+				"figure"
+			],
+			[
+				"int",
+				"integrators\tmodule"
+			],
+			[
+				"time",
+				"time_varying_params\tparam"
+			],
+			[
+				"Pxx",
+				"Pxx0"
+			],
+			[
+				"obs",
+				"observation_sigmas"
 			],
 			[
 				"obse",
@@ -20,10 +124,6 @@
 				"True\tinstance"
 			],
 			[
-				"logg",
-				"logging_debug\tfunction"
-			],
-			[
 				"noisy",
 				"noisy_data\tstatement"
 			],
@@ -32,16 +132,8 @@
 				"observation_sigmas\tstatement"
 			],
 			[
-				"dims",
-				"dims_observations"
-			],
-			[
 				"epile",
 				"epileptor_model\tclass"
-			],
-			[
-				"observa",
-				"observation_function"
 			],
 			[
 				"epil",
@@ -55,44 +147,8 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor.sublime-project",
-			"settings":
-			{
-				"buffer_size": 559,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "epileptor_util.py",
-			"settings":
-			{
-				"buffer_size": 10093,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "epileptor_evaluator.py",
-			"settings":
-			{
-				"buffer_size": 3341,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/stdputil.py",
-			"settings":
-			{
-				"buffer_size": 13161,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		}
 	],
-	"build_system": "",
+	"build_system": "Packages/LaTeXing/LaTeX.sublime-build",
 	"build_system_choices":
 	[
 		[
@@ -112,6 +168,70 @@
 			],
 			[
 				"Anaconda Python Builder",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/LaTeXing/LaTeX.sublime-build",
+					""
+				],
+				[
+					"Packages/LaTeXing/LaTeX.sublime-build",
+					"Clean up Files"
+				],
+				[
+					"Packages/LaTeXBox/support/LaTeX.sublime-build",
+					""
+				],
+				[
+					"Packages/LaTeXBox/support/LaTeX.sublime-build",
+					"Force"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					""
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Traditional"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"PdfLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"XeLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"LuaLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - PdfLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - XeLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - LuaLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Script Builder"
+				]
+			],
+			[
+				"Packages/LaTeXing/LaTeX.sublime-build",
 				""
 			]
 		]
@@ -163,6 +283,12 @@
 	"file_history":
 	[
 		"/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/stdputil.py",
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy/epileptor_evaluator.py",
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy/optimize_epileptor_qsub.py",
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor.sublime-project",
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy/epileptor_util.py",
+		"/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor_bluepy/ukf.py",
+		"/Users/emilyschlafly/BU/Systems-Davison/Midterm/tex/midterm_outline.tex",
 		"/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/gbevaluator.py"
 	],
 	"find":
@@ -178,9 +304,25 @@
 	},
 	"find_state":
 	{
-		"case_sensitive": false,
+		"case_sensitive": true,
 		"find_history":
 		[
+			"observation_sigma",
+			"process_sigma",
+			"dims_params",
+			"set_initial_estimate",
+			"sigmas",
+			"R",
+			"sigmas",
+			"generate_sigma_points",
+			"Q",
+			"observation_sigmas",
+			"observation_noise",
+			"observation_sigmas",
+			"Pxx",
+			"x0",
+			"x2",
+			"transition",
 			"print",
 			"self.num"
 		],
@@ -200,150 +342,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "/Users/emilyschlafly/BU/Kramer_rotation/kramer_rotation/epileptor.sublime-project",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 559,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								351,
-								351
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "epileptor_util.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 10093,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								9989,
-								9989
-							]
-						],
-						"settings":
-						{
-							"auto_complete_triggers":
-							[
-								{
-									"characters": "<",
-									"selector": "text.html"
-								},
-								{
-									"characters": ".",
-									"selector": "source.python - string - constant.numeric"
-								}
-							],
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3342.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "epileptor_evaluator.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3341,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								956,
-								956
-							]
-						],
-						"settings":
-						{
-							"auto_complete_triggers":
-							[
-								{
-									"characters": "<",
-									"selector": "text.html"
-								},
-								{
-									"characters": ".",
-									"selector": "source.python - string - constant.numeric"
-								}
-							],
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 495.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "/Users/emilyschlafly/BU/Kramer_rotation/BluePyOpt/examples/graupnerbrunelstdp/stdputil.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 13161,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								6417,
-								6421
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 2981.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				}
 			]
 		}
 	],
@@ -428,7 +428,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 150.0,
+	"side_bar_width": 164.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
