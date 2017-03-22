@@ -88,9 +88,10 @@ def read_pkl_file(filename):
 
 def subsample_data(data, sample_freq, dt_sample):
     dt_sample = max(dt_sample, 1./sample_freq)
-    data = data[::int(sample_freq*dt_sample)]
-    total_time = len(data)
-    return data, dt_sample, total_time
+    dstep = int(sample_freq * dt_sample)
+    data = data[::dstep]
+    num_samples = len(data)
+    return data, dt_sample, num_samples
 
 
 def read_file(filename):
@@ -390,9 +391,10 @@ def load_protocols(filename=None, plot=plot, total_time=None, dt_sample=0.1):
         data, dt_sample, num_samples = \
             subsample_data(data, sample_freq, dt_sample)
         if total_time is None:
-            total_time = num_samples//dt_sample
+            total_time = int(num_samples * dt_sample)
+            print(total_time)
         else:
-            total_time = min(total_time, num_samples//dt_sample)
+            total_time = int(min(total_time, num_samples//dt_sample))
 
         protocols = [Protocol(prot_id=prot_id, total_time=total_time)]
         target = [data[:int(total_time/dt_sample)]]

@@ -15,16 +15,16 @@ def load_obj(name):
         return pickle.load(f)
 
 
-filename = '/Users/emilyschlafly/BU/Kramer_rotation/' + \
-    'ieeg_data/I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf'
-# filename = '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/target.pkl'
+# filename = '/Users/emilyschlafly/BU/Kramer_rotation/' + \
+#     'ieeg_data/I002_A0003_D010/outputEdf_EDF/outputEdf_0.edf'
+filename = '/Users/emilyschlafly/BU/Kramer_rotation/ieeg_data/target.pkl'
 
 if __name__ == '__main__':
     seed = sys.argv[1]
     dt_sample = 0.1
-    total_time = 250
-    offspring_size = 3
-    max_ngen = 3
+    total_time = None
+    offspring_size = 1
+    max_ngen = 1
     hall_of_fame = []
 
     print(('\nfilename: {}\ntotal_time: {}\ndt_sample: {}\n' +
