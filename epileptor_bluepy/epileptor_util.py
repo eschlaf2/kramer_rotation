@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.WARN)
 # because they exist in tight loops, and expand their outputs, even when
 # debug is off, so we disable logging if possible.  Set this to true if
 # verbose output is needed
-LOGGING_DEBUG = True
+LOGGING_DEBUG = False
 
 plot = True
 
@@ -40,7 +40,9 @@ def logging_debug_vec(fmt, vec):
 def logging_debug(*args):
     '''wrapper to log to debug a vector'''
     if LOGGING_DEBUG:
-        logging.debug(*args)
+        print(args)
+    # if LOGGING_DEBUG:
+    #     logging.debug(*args)
 
 
 # Parameters for epileptor (Jirsa et al., 2014)
@@ -77,17 +79,18 @@ def read_edf_file(filename):
     f = EdfReader(filename)
     chan = 0
     data = f.readSignal(chan) / 1000.
-    sample_freq = f.getSampleFrequency(chan) 
+    sample_freq = f.getSampleFrequency(chan)
     f._close()
     return data, sample_freq
 
+
 def read_pkl_file(filename):
     f = load_obj(filename)
-    return f.noisy_data[0].reshape(-1), int(round(1./f.dt_sample))
+    return f.noisy_data[0].reshape(-1), int(round(1. / f.dt_sample))
 
 
 def subsample_data(data, sample_freq, dt_sample):
-    dt_sample = max(dt_sample, 1./sample_freq)
+    dt_sample = max(dt_sample, 1. / sample_freq)
     dstep = int(sample_freq * dt_sample)
     data = data[::dstep]
     num_samples = len(data)
@@ -96,9 +99,9 @@ def subsample_data(data, sample_freq, dt_sample):
 
 def read_file(filename):
     filetype_switcher = {
-            'edf': read_edf_file,
-            'pkl': read_pkl_file
-        }
+        'edf': read_edf_file,
+        'pkl': read_pkl_file
+    }
     filetype = filename.split('.')[-1]
     data, sample_freq = filetype_switcher[filetype](filename)
     return data, sample_freq
@@ -122,6 +125,40 @@ class Protocol(object):
 class Model(object):
     def __init__(self):
         self.augmented_state = []
+
+    def _get_total_time(self):
+        return self._total_time
+
+    def _set_total_time(self, value):
+        self._total_time = value
+        self._num_samples = set_num_samples(
+            self._total_time, self._dt_sample)
+
+    def _get_dt_sample(self):
+        return self._dt_sample
+
+    def _set_dt_sample(self, value):
+        self._dt_sample = value
+        self._steps_per_sample = \
+            set_steps_per_sample(self._dt_sample, self._dt_integrate)
+        self._num_samples = \
+            set_num_samples(self._total_time, self._dt_sample)
+
+    def _get_dt_integrate(self):
+        return self._dt_integrate
+
+    def _set_dt_integrate(self, value):
+        self._dt_integrate = value
+        self._steps_per_sample = \
+            set_steps_per_sample(self._dt_sample, self._dt_integrate)
+
+    total_time = property(_get_total_time, _set_total_time)
+    dt_sample = property(_get_dt_sample, _set_dt_sample)
+    dt_integrate = property(_get_dt_integrate, _set_dt_integrate)
+    num_samples = property(lambda self: self._num_samples)
+    steps_per_sample = property(lambda self: self._steps_per_sample)
+    time = property(lambda self:
+                    np.arange(0, self._total_time, self._dt_sample))
 
     def generate_simulation(self, plot=plot):
         '''
@@ -170,6 +207,8 @@ class Model(object):
             'euler_maruyama': integrators.euler_maruyama,
             'test_integrator': integrators.test_integrator
         }
+        logging_debug('state.shape: ', state.shape)
+        logging_debug('time_varying_params.shape: ', time_varying_params.shape)
         return switcher[self.integrator](self.model_function,
                                          state,
                                          time_varying_params,
@@ -182,6 +221,7 @@ class Model(object):
                                self._num_samples))  # allocate
         true_state[:, 0] = self.initial_conditions
         for n in range(self._num_samples - 1):
+            logging_debug('n: ', n)
             x_temp = true_state[:, n]
             true_state[:, n + 1] = \
                 self.integrate(state=x_temp,
@@ -194,11 +234,11 @@ class Model(object):
         '''Plot simulation'''
         plt.rc('text', usetex=True)
         plt.figure(figsize=(10, 2))
-        plt.plot(self.noisy_data[0, :],
+        plt.plot(self.time, self.noisy_data[0, :],
         # plt.plot(self.target[0],
                  'bd', markeredgecolor='blue',
                  mfc='blue', ms=3, label='noisy data')
-        plt.plot(self.observation_function(self.augmented_state).T,
+        plt.plot(self.time, self.observation_function(self.augmented_state).T,
                  'k', linewidth=2, label='actual')
         # plt.figure()
         # for i in range(self.dims_state_vars):
@@ -220,9 +260,8 @@ def set_steps_per_sample(dt_sample, dt_integrate):
 
 class epileptor_model(Model):
     def __init__(self, params=None,
-                 total_time=2500, dt_sample=0.1,
+                 total_time=2500, dt_sample=0.1, dt_integrate=None,
                  **kwargs):
-        '''x0 is tracked parameter'''
         if not params:
             params = {}
             for key, value in param_epileptor.iteritems():
@@ -261,7 +300,8 @@ class epileptor_model(Model):
 
         self._total_time = total_time  # 2500 for epileptor, 160 for FN
         self._dt_sample = dt_sample
-        self._dt_integrate = self._dt_sample
+        self._dt_integrate = self._dt_sample if dt_integrate is None \
+            else dt_integrate
         self._num_samples = int(set_num_samples(
             self._total_time, self._dt_sample))
         self._steps_per_sample = int(set_steps_per_sample(
@@ -274,41 +314,41 @@ class epileptor_model(Model):
             self.Irest2 * np.ones(self._num_samples)).reshape(
             1, self._num_samples)
         I_extz = (
-            0. * np.ones(self._num_samples)).reshape(
+            1. * np.ones(self._num_samples)).reshape(
             1, self._num_samples)
         self.parameters = np.vstack((I_ext1, I_ext2, I_extz))
 
-    def _get_total_time(self):
-        return self._total_time
+    # def _get_total_time(self):
+    #     return self._total_time
 
-    def _set_total_time(self, value):
-        self._total_time = value
-        self._num_samples = set_num_samples(
-            self._total_time, self._dt_sample)
+    # def _set_total_time(self, value):
+    #     self._total_time = value
+    #     self._num_samples = set_num_samples(
+    #         self._total_time, self._dt_sample)
 
-    def _get_dt_sample(self):
-        return self._dt_sample
+    # def _get_dt_sample(self):
+    #     return self._dt_sample
 
-    def _set_dt_sample(self, value):
-        self._dt_sample = value
-        self._steps_per_sample = \
-            set_steps_per_sample(self._dt_sample, self._dt_integrate)
-        self._num_samples = \
-            set_num_samples(self._total_time, self._dt_sample)
+    # def _set_dt_sample(self, value):
+    #     self._dt_sample = value
+    #     self._steps_per_sample = \
+    #         set_steps_per_sample(self._dt_sample, self._dt_integrate)
+    #     self._num_samples = \
+    #         set_num_samples(self._total_time, self._dt_sample)
 
-    def _get_dt_integrate(self):
-        return self._dt_integrate
+    # def _get_dt_integrate(self):
+    #     return self._dt_integrate
 
-    def _set_dt_integrate(self, value):
-        self._dt_integrate = value
-        self._steps_per_sample = \
-            set_steps_per_sample(self._dt_sample, self._dt_integrate)
+    # def _set_dt_integrate(self, value):
+    #     self._dt_integrate = value
+    #     self._steps_per_sample = \
+    #         set_steps_per_sample(self._dt_sample, self._dt_integrate)
 
-    total_time = property(_get_total_time, _set_total_time)
-    dt_sample = property(_get_dt_sample, _set_dt_sample)
-    dt_integrate = property(_get_dt_integrate, _set_dt_integrate)
-    num_samples = property(lambda self: self._num_samples)
-    steps_per_sample = property(lambda self: self._steps_per_sample)
+    # total_time = property(_get_total_time, _set_total_time)
+    # dt_sample = property(_get_dt_sample, _set_dt_sample)
+    # dt_integrate = property(_get_dt_integrate, _set_dt_integrate)
+    # num_samples = property(lambda self: self._num_samples)
+    # steps_per_sample = property(lambda self: self._steps_per_sample)
 
     def model_function(self, state, time_varying_params):
         '''
@@ -318,9 +358,10 @@ class epileptor_model(Model):
         # I_ext = time_varying_params.reshape(x1.shape)
         I_ext1, I_ext2, I_extz = time_varying_params
         x1_dot = y1 - self.f1(x1, x2, z) - z + I_ext1  # self.Irest1
-        y1_dot = self.y0 - self.a * x1 * x1 - y1  # a = 5., tvb param d
-        z_dot = 1. / self.tau0 * \
-            (self.b * (x1 - self.x0) - z) + I_extz  # b = 4., tvb const
+        y1_dot = (self.y0 - self.a * x1 * x1 - y1) / \
+            self.tau1  # a = 5., tvb param d
+        z_dot = I_extz / self.tau0 * \
+            (self.b * (x1 - self.x0) - z)  # b = 4., tvb const
         x2_dot = -y2 + x2 - x2**3 + I_ext2 + \
             2. * g - self.c * (z - self.d)  # + self.Irest2 c = 0.3, d = 3.5
         y2_dot = (-y2 + self.f2(x2)) / self.tau2
@@ -355,6 +396,100 @@ class epileptor_model(Model):
 
     def f2(self, x2):
         return 0. * (x2 < -0.25) + (6 * (x2 + 0.25)) * (x2 >= -0.25)
+
+
+class FN_model(Model):
+    def __init__(self, params=None,
+                 total_time=160, dt_sample=0.2, dt_integrate=None,
+                 **kwargs):
+        if not params:
+            params = {
+                'a': 0.7,
+                'b': 0.8,
+                'c': 3.,
+                'observation_sigmas': 25e-2
+            }
+        for key, value in kwargs.iteritems():
+            params[key] = float(value)
+        self.params = params
+        self.a, self.b, self.c = params['a'], params['b'], params['c']
+
+        self.initial_conditions = [0., 0.]
+        self.noise = [0., 0.]
+        self.observation_sigmas = params['observation_sigmas']
+
+        self.integrator = 'ruku4'
+
+        self.var_names = ['v', 'w']
+        # self.parameter_names = ['$I_{ext}$', 'a', 'b', 'c']
+        self.parameter_names = ['$I_{ext}$', 'a']
+        # self.parameter_names = ['$I_{ext}$']
+
+        self.dims_params = len(self.parameter_names)
+        self.dims_state_vars = len(self.var_names)
+        self.dims_observations = 1
+        self.dims_augmented_state = self.dims_params + self.dims_state_vars
+
+        self._total_time = total_time  # 2500 for epileptor, 160 for FN
+        self._dt_sample = dt_sample
+        self._dt_integrate = self._dt_sample if dt_integrate is None \
+            else dt_integrate
+        self._num_samples = int(set_num_samples(
+            self._total_time, self._dt_sample))
+        self._steps_per_sample = int(set_steps_per_sample(
+            self._dt_sample, self._dt_integrate))
+
+        Iext = np.arange(1, self._num_samples + 1) / 250. * 2 * np.pi
+        Iext = -0.4 - 1.01 * (np.abs(np.sin(Iext / 2.)))
+        a = (
+            self.a * np.ones(self._num_samples)).reshape(
+            1, self._num_samples)
+        # b = (
+        #     self.b * np.ones(self._num_samples)).reshape(
+        #     1, self._num_samples)
+        # c = (
+        #     self.c * np.ones(self._num_samples)).reshape(
+        #     1, self._num_samples)
+        # self.parameters = np.vstack((Iext, a, b, c))
+        # self.parameters = np.vstack((Iext)).reshape(1, -1)
+        # self.parameters = Iext.reshape(1, self._num_samples)
+        self.parameters = np.vstack((Iext, a))
+
+    def set_initial_estimate(self, initial_estimate):
+        w = self.noisy_data[0, 0]
+        initial_estimate[-2] = w
+        return initial_estimate
+
+    def model_function(self, state, parameters):
+        a = self.a
+        b = self.b
+        c = self.c
+        v, w = state
+        # input_current = parameters[0]
+        input_current, a = parameters
+        logging_debug('model_function -> state: ', state)
+        logging_debug('model_function -> v: ', v)
+        logging_debug('model_function -> v.shape', v.shape)
+        logging_debug('model_function -> input_current.shape',
+                      input_current.shape)
+        # input_current, a, b, c = parameters
+        v_dot = c * (w + v - v**3 / 3 + input_current)
+        w_dot = -(v - a + b * w) / c
+        return np.array([v_dot, w_dot])
+
+    def observation_function(self, augmented_state):
+        w = augmented_state[-2, :]
+        return w
+
+    def transition_function(self, augmented_state):
+        parameters, state = np.split(augmented_state, [self.dims_params, ])
+        state = ruku4(self.model_function,
+                      state,
+                      parameters,
+                      self.dt_integrate,
+                      self.steps_per_sample,
+                      self.noise)
+        return np.vstack((parameters, state))
 
 
 def load_protocols(filename=None, plot=plot, total_time=None, dt_sample=0.1):
