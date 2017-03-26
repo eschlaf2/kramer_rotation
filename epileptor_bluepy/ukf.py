@@ -59,7 +59,7 @@ def create_sigma_list(value, dim):
         return value[:dim]
 
 
-def keep_in_bounds(value, bounds=(-30, 30)):
+def keep_in_bounds(value, bounds=(-100, 100)):
     type_temp = type(value)
     value = np.array(value)
     value[value < bounds[0]] = bounds[0]
@@ -68,10 +68,15 @@ def keep_in_bounds(value, bounds=(-30, 30)):
 
 
 class unscented_kalman_filter(Model):
-    def __init__(self, model, parameter_sigma=15e-3, state_sigma=15e-3):
+    def __init__(self, model, parameter_sigma=15e-3, state_sigma=15e-3,
+                 observation_sigma=None):
         self.model = model
         self.parameter_sigma = parameter_sigma
         self.state_sigma = state_sigma
+        if observation_sigma is None:
+            self.observation_sigma = np.std(model.noisy_data)
+        else:
+            self.observation_sigma = observation_sigma
         self.sigma_points = []
         self.results = []
         self.initial_estimate = []
@@ -81,6 +86,8 @@ class unscented_kalman_filter(Model):
         self.errors = np.zeros((model.dims_augmented_state, model.num_samples))
         self.Ks = np.zeros((model.dims_augmented_state,
                             model.dims_observations, model.num_samples))
+        self.innovation = np.zeros((model.dims_observations,
+                                    model.num_samples))
 
     def set_initial_estimate(self, initial_estimate=None, randrange=0.):
         model = self.model
@@ -106,37 +113,10 @@ class unscented_kalman_filter(Model):
             if sigmas[i] < 1e-15:
                 self.estimated_state[i, 0] = model.augmented_state[i, 0]
 
-        # if initial_estimate:
-        #     self.estimated_state[:, 0] = initial_estimate
-        # elif randrange and np.all(np.array(randrange) >= 0):
-        #     if len(randrange) == 1:
-        #         r0, rf = 0, int(np.fix(randrange))
-        #     else:
-        #         r0, rf = int(np.fix(randrange[0])), int(np.fix(randrange[1]))
-        #     r = 2 * rf
-        #     initial_estimate = -rf + np.random.randint(
-        #         r0, r, model.augmented_state[:, 0].shape) + \
-        #         model.augmented_state[:, 0]
-        #     self.estimated_state[:, 0] = \
-        #         model.set_initial_estimate(initial_estimate)
-        # elif self.initial_estimate:
-        #     self.estimated_state[:, 0] = self.initial_estimate
-        # else:
-        #     self.estimated_state[:, 0] = model.augmented_state[:, 0]
-
     def set_covariances(self):
         model = self.model
         self.Pxx = np.zeros((model.dims_augmented_state,
                              model.dims_augmented_state, model.num_samples))
-        # sigmas = {}
-        # sigmas['Q'] = self.parameter_sigma
-        # sigmas['R'] = self.state_sigma
-        # Pxx_init = []
-        # for n in model.Pxx0:
-        #     Pxx_init = np.hstack((Pxx_init, sigmas[n]))
-        # Pxx_init = np.diag(Pxx_init)
-        # self.Q = np.diag(sigmas['Q'])
-        # self.R = np.diag(sigmas['R'])
         self.Q = keep_in_bounds(create_sigma_list(
             self.parameter_sigma, model.dims_params),
             bounds=(1e-16, 100))
@@ -158,7 +138,7 @@ class unscented_kalman_filter(Model):
         sigma_points = np.hstack((xsigma, -xsigma))
         for i in range(num_sigma_points):
             sigma_points[:, i] += xhat
-        self.sigma_points = sigma_points
+        self.sigma_points = keep_in_bounds(sigma_points, bounds=(-100, 100))
 
     def unscented_kalman(self, initial_estimate=[]):
         model = self.model
@@ -184,21 +164,25 @@ class unscented_kalman_filter(Model):
         sigma_points = self.sigma_points
 
         X = model.transition_function(sigma_points)
-        Y = model.observation_function(X).reshape(1, -1)
+        Y = model.observation_function(X).\
+            reshape(model.dims_observations, -1)
 
         Pxx = symmetrize(covariance(X, X))
-        Pyy = covariance(Y, Y) + self.state_sigma
+        Pyy = covariance(Y, Y) + self.observation_sigma
         Pxy = covariance(X, Y)
 
+        # K = keep_in_bounds(np.matmul(Pxy, la.inv(Pyy)),
+        #                    bounds=(-1., 1.))
         K = np.matmul(Pxy, la.inv(Pyy))
-        xhat = np.mean(X, 1) + \
-            np.matmul(K, (model.noisy_data[:, k] - np.mean(Y, 1)))
+        innovation = model.noisy_data[:, k] - np.mean(Y, 1)
+        xhat = np.mean(X, 1) + np.matmul(K, innovation)
 
         Pxx = symmetrize(Pxx - np.matmul(K, Pxy.T))
 
         self.estimated_state[:, k] = keep_in_bounds(xhat)
         self.Pxx[:, :, k] = keep_in_bounds(Pxx, bounds=(-100, 100))
         self.Ks[:, :, k] = K
+        self.innovation[:, k] = innovation
 
     def print_results(self):
         '''Prints results of Kalman filtering.'''

@@ -146,6 +146,7 @@ class Epileptor_Evaluator(object):
             logging_debug_vec('evaluate_with_lists -> target:', target)
             logging_debug('evaluate_with_lists -> target type:', type(target))
             err.append(epileptor_util.rmse(target, result))
+            # err.append(1 - (np.corrcoef(target, result)[0, 1]**2))  % Pearson R error
             if self.plot:
                 fig, ax1 = plt.subplots(figsize=(10, 2))
                 ax1.plot(target, 'r')
