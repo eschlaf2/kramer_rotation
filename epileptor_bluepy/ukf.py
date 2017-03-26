@@ -223,13 +223,15 @@ class unscented_kalman_filter(Model):
         for i in range(model.dims_state_vars):
             if separated and i > 0:
                 plt.figure(figsize=(10, 2))
-            plt.plot(model.augmented_state[model.dims_params + i, :],
+            plt.plot(model.time,
+                     model.augmented_state[model.dims_params + i, :],
                      lw=2, label=model.var_names[i])
-            plt.plot(self.estimated_state[model.dims_params + i, :],
+            plt.plot(model.time,
+                     self.estimated_state[model.dims_params + i, :],
                      'r--', lw=2)
             if separated:
                 plt.title(model.var_names[i])
-                plt.xlabel('t/dt')
+                plt.xlabel('t')
                 plt.axis('tight')
                 plt.show()
         if not separated:
@@ -239,11 +241,12 @@ class unscented_kalman_filter(Model):
             plt.axis('tight')
             plt.show()
         plt.figure(figsize=(10, 2))
-        plt.plot(model.noisy_data[0], 'k')
-        plt.plot(model.observation_function(self.estimated_state), 'r')
+        plt.plot(model.time, model.noisy_data[0], 'k')
+        plt.plot(model.time,
+                 model.observation_function(self.estimated_state), 'r')
         plt.title('Observed Results')
         plt.axis('tight')
-        plt.xlabel('t/dt')
+        plt.xlabel('t')
         plt.show()
 
         for i in range(model.dims_params):
@@ -251,19 +254,22 @@ class unscented_kalman_filter(Model):
                 continue
             if i == 0 or (separated and i > 0):
                 plt.figure(figsize=(10, 2))
-            plt.plot(model.augmented_state[i, :], 'k',
+            plt.plot(model.time, model.augmented_state[i, :], 'k',
                      linewidth=2, label=model.parameter_names[i])
-            plt.plot(self.estimated_state[i, :], 'm', linewidth=2)
-            plt.plot(self.estimated_state[i, :] + self.errors[i, :], 'm')
-            plt.plot(self.estimated_state[i, :] - self.errors[i, :], 'm')
+            plt.plot(model.time,
+                     self.estimated_state[i, :], 'm', linewidth=2)
+            plt.plot(model.time,
+                     self.estimated_state[i, :] + self.errors[i, :], 'm')
+            plt.plot(model.time,
+                     self.estimated_state[i, :] - self.errors[i, :], 'm')
             if separated:
                 plt.title(model.parameter_names[i])
-                plt.xlabel('t/dt')
+                plt.xlabel('t')
                 plt.axis('tight')
                 plt.show()
         if not separated:
             plt.title('Estimated Parameters')
             plt.legend()
-            plt.xlabel('t/dt')
+            plt.xlabel('t')
             plt.axis('tight')
             plt.show()
