@@ -25,7 +25,7 @@ if __name__ == '__main__':
     dt_sample = 0.1
     total_time = None
     offspring_size = 100
-    max_ngen = 25
+    max_ngen = 50
     use_scoop = True
     hall_of_fame = []
 
